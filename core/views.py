@@ -20,6 +20,7 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.exceptions import ValidationError
 
 from core.models import EmailVerificationToken, PasswordChangeToken
 from core.serializers import (
@@ -356,14 +357,14 @@ class GoogleAuthCallbackView(APIView):
         error = request.GET.get("error")
 
         if error:
-            raise ValueError(f"Google authentication error: {error}")
+            raise ValidationError(f"Google authentication error: {error}")
 
         if not code:
-            raise ValueError("Authorization code not provided by Google")
+            raise ValidationError("Authorization code not provided by Google")
 
         stored_state = request.session.get("oauth_state")
         if stored_state and state != stored_state:
-            raise ValueError("Invalid state parameter in Google callback")
+            raise ValidationError("Invalid state parameter in Google callback")
 
         try:
             handler = GoogleOAuthHandler()
