@@ -96,7 +96,8 @@ class ConfirmPasswordChangeSerializer(serializers.Serializer):
         except PasswordChangeToken.DoesNotExist:
             raise serializers.ValidationError("Invalid token")
 
-        if token_obj.is_expired():
+        now = timezone.now()
+        if token_obj.created_at < now - timezone.timedelta(days=1):
             raise serializers.ValidationError("Token has expired")
 
         self.token_obj = token_obj
