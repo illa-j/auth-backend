@@ -39,12 +39,14 @@ def send_password_change_confirmation_email(self, confirm_link, user_email):
 
 
 @shared_task
-def cleanup_expired_tokens_and_not_verified_users(self):
+def cleanup_expired_tokens_and_not_active_users():
     now = timezone.now()
-    email_verification_tokens = EmailVerificationToken.objects.filter(created_at__lt=now - timedelta(days=1))
+    email_verification_tokens = EmailVerificationToken.objects.filter(
+        created_at__lt=now - timedelta(hours=1)
+    ).select_related("user")
     for token in email_verification_tokens:
         user = token.user
-        if not user.is_verified:
+        if not user.is_active:
             user.delete()
         token.delete()
     PasswordChangeToken.objects.filter(created_at__lt=now - timedelta(hours=1)).delete()

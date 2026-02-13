@@ -162,6 +162,13 @@ REST_FRAMEWORK = {
     ),
 }
 
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Auth Backend API",
+    "DESCRIPTION": "Authentication service (JWT, email verification, password change, Google OAuth).",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+}
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=50),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
@@ -188,8 +195,8 @@ GOOGLE_CLIENT_SECRET = os.environ["GOOGLE_CLIENT_SECRET"]
 GOOGLE_REDIRECT_URI = os.environ["GOOGLE_REDIRECT_URI"]
 
 CELERY_BEAT_SCHEDULE = {
-    "cleanup-expired-tokens-and-not-verified-users": {
-        "task": "core.tasks.cleanup_expired_tokens_and_not_verified_users",
-        "schedule": timedelta(minutes=10)
+    "cleanup-expired-tokens-and-not-active-users": {
+        "task": "core.tasks.cleanup_expired_tokens_and_not_active_users",
+        "schedule": 600.0,
     }
 }

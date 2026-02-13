@@ -1,13 +1,19 @@
 from django.contrib.auth.hashers import make_password
 from django.db import transaction
 from django.urls import reverse
-from rest_framework import generics, status
+from rest_framework import generics, serializers, status
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    extend_schema,
+    extend_schema_view,
+    inline_serializer
+)
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -120,7 +126,25 @@ class PasswordChangeView(CreateAPIView):
             )
 
 
-@extend_schema_view(get=extend_schema(summary="Confirm password change by token"))
+@extend_schema_view(
+    get=extend_schema(
+        summary="Confirm password change by token",
+        parameters=[
+            OpenApiParameter(
+                name="token",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=True,
+            )
+        ],
+        responses={
+            200: inline_serializer(
+                name="ConfirmPasswordChangeResponse",
+                fields={"detail": serializers.CharField()},
+            )
+        },
+    )
+)
 class ConfirmPasswordChangeView(APIView):
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "token_verification"
@@ -136,7 +160,25 @@ class ConfirmPasswordChangeView(APIView):
         )
 
 
-@extend_schema_view(get=extend_schema(summary="Verify email by token"))
+@extend_schema_view(
+    get=extend_schema(
+        summary="Verify email by token",
+        parameters=[
+            OpenApiParameter(
+                name="token",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=True,
+            )
+        ],
+        responses={
+            200: inline_serializer(
+                name="VerifyEmailResponse",
+                fields={"detail": serializers.CharField()},
+            )
+        },
+    )
+)
 class VerifyEmailAPIView(APIView):
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "token_verification"
@@ -199,6 +241,18 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
 class GoogleAuthURLView(APIView):
     permission_classes = (AllowAny,)
 
+    @extend_schema(
+        summary="Get Google OAuth authorization URL",
+        responses={
+            200: inline_serializer(
+                name="GoogleAuthURLResponse",
+                fields={
+                    "authorization_url": serializers.URLField(),
+                    "state": serializers.CharField(),
+                },
+            )
+        },
+    )
     def get(self, request):
         handler = GoogleOAuthHandler()
         auth_url, state = handler.get_authorization_url()
@@ -212,6 +266,7 @@ class GoogleAuthView(APIView):
     permission_classes = (AllowAny,)
     serializer_class = GoogleAuthSerializer
 
+    @extend_schema(summary="Authenticate with Google OAuth authorization code")
     def post(self, request):
         serializer = GoogleAuthSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -252,6 +307,49 @@ class GoogleAuthView(APIView):
 class GoogleAuthCallbackView(APIView):
     permission_classes = (AllowAny,)
 
+    @extend_schema(
+        summary="Google OAuth callback (exchange code for JWT tokens)",
+        parameters=[
+            OpenApiParameter(
+                name="code",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=True,
+            ),
+            OpenApiParameter(
+                name="state",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+            ),
+            OpenApiParameter(
+                name="error",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+            ),
+        ],
+        responses={
+            200: inline_serializer(
+                name="GoogleAuthCallbackResponse",
+                fields={
+                    "access_token": serializers.CharField(),
+                    "refresh_token": serializers.CharField(),
+                    "user": inline_serializer(
+                        name="GoogleAuthCallbackUser",
+                        fields={
+                            "id": serializers.CharField(),
+                            "email": serializers.EmailField(),
+                            "first_name": serializers.CharField(),
+                            "last_name": serializers.CharField(),
+                            "is_active": serializers.BooleanField(),
+                            "created": serializers.BooleanField(),
+                        },
+                    ),
+                },
+            )
+        },
+    )
     def get(self, request):
         code = request.GET.get("code")
         state = request.GET.get("state")
@@ -301,6 +399,7 @@ class GoogleTokenAuthView(APIView):
     permission_classes = (AllowAny,)
     serializer_class = GoogleTokenSerializer
 
+    @extend_schema(summary="Authenticate with Google ID token")
     def post(self, request):
         serializer = GoogleTokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

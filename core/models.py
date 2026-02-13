@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.contrib.auth.validators import UnicodeUsernameValidator
 
+
 class UserManager(BaseUserManager["User"]):
     use_in_migrations = True
 
