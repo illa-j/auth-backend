@@ -1,0 +1,42 @@
+from django.urls import path
+
+from core.views import (
+    CreateUserView,
+    GoogleAuthURLView,
+    ManageUserView,
+    LogoutView,
+    TokenObtainPairView,
+    TokenRefreshView,
+    TokenVerifyView,
+    VerifyEmailAPIView,
+    ConfirmPasswordChangeView,
+    PasswordChangeView,
+    GoogleAuthView,
+    GoogleAuthCallbackView,
+    GoogleTokenAuthView,
+)
+
+app_name = "core"
+
+
+urlpatterns = [
+    path("login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("token/verify/", TokenVerifyView.as_view(), name="token_verify"),
+    path("register/", CreateUserView.as_view(), name="register"),
+    path("me/", ManageUserView.as_view(), name="me"),
+    path("logout/", LogoutView.as_view(), name="logout"),
+    path("verify-email/", VerifyEmailAPIView.as_view(), name="verify_email"),
+    path("password-change/", PasswordChangeView.as_view(), name="password_change"),
+    path(
+        "confirm-password-change/",
+        ConfirmPasswordChangeView.as_view(),
+        name="confirm_password_change",
+    ),
+    path("google/url/", GoogleAuthURLView.as_view(), name="google-auth-url"),
+    path("google/", GoogleAuthView.as_view(), name="google-auth"),
+    path(
+        "google/login/", GoogleAuthCallbackView.as_view(), name="google-auth-callback"
+    ),
+    path("google/token/", GoogleTokenAuthView.as_view(), name="google-token-auth"),
+]

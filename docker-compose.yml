@@ -1,0 +1,64 @@
+services:
+  app:
+    build:
+      context: .
+    ports:
+      - "8000:8000"
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:16-alpine
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    ports:
+      - "5433:5432"
+    env_file:
+      - .env
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+
+  celery_worker:
+    build:
+      context: .
+    command: celery -A auth_backend worker -l info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+      - app
+
+  celery_beat:
+    build:
+      context: .
+    user: "0"
+    command: celery -A auth_backend beat -l info -s /app/beat/celerybeat-schedule
+    volumes:
+      - .:/app
+      - beat_schedule:/app/beat
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+      - app
+
+volumes:
+  postgres_data:
+  beat_schedule:
