@@ -10,7 +10,8 @@ from django.conf import settings
 class GoogleOAuthHandler:
     def __init__(self):
         self.client_id = settings.GOOGLE_CLIENT_ID
-        self.client_secret = settings
+        self.client_secret = settings.GOOGLE_CLIENT_SECRET
+        self.redirect_uri = settings.GOOGLE_REDIRECT_URI
 
     def get_authorization_url(self) -> tuple[str, str]:
         flow = Flow.from_client_config(
